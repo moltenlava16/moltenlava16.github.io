@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Helvetica, Arial, sans-serif;
+    background-color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+p {    
+    color: #041E42;    
+    font-weight: 900;   
+    font-size: 20px;    
+    font-family: Helvetica, Arial, sans-serif;   
+}
+
+.game-container {
+    margin-top: 50px;
+    text-align: center;
+    position: relative;
+}
+
+.instructions {
+    font-size: 16px;
+    color: #041E42;
+    margin-bottom: 20px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.instructions.red {
+    color: red;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+    100% { transform: translateX(0); }
+}
+
+.instructions.shaking {
+    animation: shake 0.5s infinite;
+}
+
+.images-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 30px 0;
+    position: relative;
+    min-height: 200px;
+}
+
+.game-image {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    position: relative;
+}
+
+#knife {
+    cursor: grab;
+    z-index: 100;
+    transition: none;
+}
+
+#knife.dragging {
+    cursor: grabbing;
+    position: fixed;
+    transition: none;
+}
+
+#knife.returning {
+    transition: all 0.3s ease;
+}
+
+.speech-bubble {
+    background: white;
+    border: 2px solid #041E42;
+    border-radius: 20px;
+    padding: 15px 25px;
+    position: relative;
+    display: inline-block;
+    margin-top: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.speech-bubble:after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 10px solid transparent;
+    border-top: 10px solid #041E42;
+}
+
+.speech-bubble:before {
+    content: '';
+    position: absolute;
+    bottom: -17px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 9px solid transparent;
+    border-top: 9px solid white;
+}
+
+.click-to-eat {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #041E42;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+#plate-container {
+    position: relative;
+    display: inline-block;
+}
+
+.youtube-link {
+    margin-top: 30px;
+    display: none;
+}
+
+.youtube-link a {
+    color: #041E42;
+    font-size: 16px;
+}
+
+/* Placeholder images - using colored divs with labels */
+.placeholder-image {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #333;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    background: white;
+}
+
+#cake { background: #ffe4c4; }
+#knife { background: #c0c0c0; }
+#plate { background: #f0f0f0; }
+#cake-slice { 
+    background: #ffb347; 
+    cursor: pointer;
+}
+#cake-slice:hover {
+    transform: scale(1.05);
+}
+#crumbs { 
+    background: #d2691e;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game-container">
+    <div class="instructions" id="instructions">(drag the knife to the cake to cut yourself a slice)</div>
+    
+    <div class="images-container">
+        <div id="knife" class="game-image placeholder-image draggable">Knife</div>
+        <div id="cake" class="game-image placeholder-image" data-state="0">Uneaten Cake</div>
+        <div id="plate-container">
+            <div id="plate" class="game-image placeholder-image">Plate</div>
+            <div id="cake-slice" class="game-image placeholder-image" style="display: none;">
+                Cake Slice
+                <div class="click-to-eat" style="display: none;">Click to eat!</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="speech-bubble" id="speech-bubble">
+        <p style="margin: 0;">Sorry for the inconvenience... have a cake!</p>
+    </div>
+    
+    <div class="youtube-link" id="youtube-link">
+        <a href="https://www.youtube.com/shorts/tm9NT6XrUqQ" target="_blank">https://www.youtube.com/shorts/tm9NT6XrUqQ</a>
+    </div>
+</div>
+
+<script>
+// Game state
+let cakeState = 0;
+let slicesEaten = 0;
+let isDragging = false;
+let canDrag = true;
+let knifeOriginalPosition = null;
+let currentFontSize = 16;
+
+// Elements
+const knife = document.getElementById('knife');
+const cake = document.getElementById('cake');
+const plate = document.getElementById('plate');
+const cakeSlice = document.getElementById('cake-slice');
+const clickToEat = document.querySelector('.click-to-eat');
+const speechBubble = document.querySelector('.speech-bubble p');
+const instructions = document.getElementById('instructions');
+const youtubeLink = document.getElementById('youtube-link');
+
+// Cake states text
+const cakeStates = [
+    'Uneaten Cake',
+    'Cake with 1 slice',
+    'Cake with 2 slices',
+    'Cake with 3 slices',
+    'Cake with 4 slices',
+    'Crumbs'
+];
+
+// Store original knife position
+function storeKnifePosition() {
+    const rect = knife.getBoundingClientRect();
+    knifeOriginalPosition = {
+        left: rect.left,
+        top: rect.top
+    };
+}
+
+// Initialize knife position
+window.addEventListener('load', () => {
+    setTimeout(storeKnifePosition, 100);
+});
+
+// Drag functionality
+knife.addEventListener('mousedown', (e) => {
+    if (!canDrag) return;
+    
+    isDragging = true;
+    knife.classList.add('dragging');
+    knife.classList.remove('returning');
+    
+    const offsetX = e.clientX - knife.getBoundingClientRect().left;
+    const offsetY = e.clientY - knife.getBoundingClientRect().top;
+    
+    function moveKnife(e) {
+        if (!isDragging) return;
+        knife.style.left = (e.clientX - offsetX) + 'px';
+        knife.style.top = (e.clientY - offsetY) + 'px';
+        
+        // Check collision with cake
+        const knifeRect = knife.getBoundingClientRect();
+        const cakeRect = cake.getBoundingClientRect();
+        
+        if (isColliding(knifeRect, cakeRect) && cakeState < 5) {
+            handleKnifeCakeCollision();
+        }
+    }
+    
+    function stopDragging() {
+        if (!isDragging) return;
+        isDragging = false;
+        knife.classList.remove('dragging');
+        knife.classList.add('returning');
+        returnKnifeToOriginal();
+        document.removeEventListener('mousemove', moveKnife);
+        document.removeEventListener('mouseup', stopDragging);
+    }
+    
+    document.addEventListener('mousemove', moveKnife);
+    document.addEventListener('mouseup', stopDragging);
+});
+
+// Collision detection
+function isColliding(rect1, rect2) {
+    return !(rect1.right < rect2.left || 
+             rect1.left > rect2.right || 
+             rect1.bottom < rect2.top || 
+             rect1.top > rect2.bottom);
+}
+
+// Return knife to original position
+function returnKnifeToOriginal() {
+    if (knifeOriginalPosition) {
+        setTimeout(() => {
+            knife.style.position = 'relative';
+            knife.style.left = '0px';
+            knife.style.top = '0px';
+            knife.classList.remove('returning');
+        }, 300);
+    }
+}
+
+// Handle knife-cake collision
+function handleKnifeCakeCollision() {
+    if (cakeState >= 5) return;
+    
+    isDragging = false;
+    knife.classList.remove('dragging');
+    returnKnifeToOriginal();
+    
+    cakeState++;
+    cake.textContent = cakeStates[cakeState];
+    cake.setAttribute('data-state', cakeState);
+    
+    // Update speech bubble based on state
+    switch(cakeState) {
+        case 1:
+            // First slice - text already set to default
+            break;
+        case 2:
+            // Second slice - "Feel free to have seconds!" set after eating
+            break;
+        case 3:
+            speechBubble.textContent = "Wow, thirds? You must be hungry!";
+            break;
+        case 4:
+            speechBubble.textContent = "Another slice? Save some for me 😅";
+            break;
+        case 5:
+            speechBubble.textContent = "Geez, just crumbs left… you're not gonna eat those too, are you?";
+            break;
+    }
+    
+    // Show cake slice on plate
+    showCakeSlice();
+}
+
+// Show cake slice
+function showCakeSlice() {
+    canDrag = false;
+    plate.style.display = 'none';
+    cakeSlice.style.display = 'flex';
+    clickToEat.style.display = 'block';
+}
+
+// Handle eating cake slice
+cakeSlice.addEventListener('click', () => {
+    if (cakeState < 5) {
+        eatCakeSlice();
+    }
+});
+
+function eatCakeSlice() {
+    slicesEaten++;
+    
+    // Hide cake slice and show plate
+    cakeSlice.style.display = 'none';
+    clickToEat.style.display = 'none';
+    plate.style.display = 'flex';
+    canDrag = true;
+    
+    // Update instructions font size
+    currentFontSize += 6;
+    instructions.style.fontSize = currentFontSize + 'px';
+    
+    // Update based on slices eaten
+    switch(slicesEaten) {
+        case 1:
+            speechBubble.textContent = "Feel free to have seconds!";
+            break;
+        case 2:
+            // Size increased
+            break;
+        case 3:
+            instructions.classList.add('red');
+            break;
+        case 4:
+            instructions.classList.add('shaking');
+            break;
+        case 5:
+            instructions.textContent = "(click to eat the crumbs)";
+            instructions.style.fontSize = (currentFontSize + 6) + 'px';
+            cake.style.cursor = 'pointer';
+            // Add click handler for crumbs
+            cake.addEventListener('click', eatCrumbs);
+            break;
+    }
+}
+
+// Handle eating crumbs
+function eatCrumbs() {
+    if (cakeState !== 5 || slicesEaten !== 5) return;
+    
+    cake.style.display = 'none';
+    speechBubble.textContent = "...";
+    youtubeLink.style.display = 'block';
+}
+
+// Prevent text selection while dragging
+document.addEventListener('selectstart', (e) => {
+    if (isDragging) {
+        e.preventDefault();
+    }
+});
+</script>
+
+</body>
+</html>
