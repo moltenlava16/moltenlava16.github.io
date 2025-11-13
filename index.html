@@ -4,66 +4,196 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logan Lee</title>
-    <subtitle>B.S. Computer Science, B.A. Mathematics at Georgetown University (Class of 2026)</subtitle>
+
+    <style>
+        /* Layout: fixed left profile column + main scrolling content */
+        .layout {
+            display: block;
+        }
+        .profile .headshot {
+            display: block;
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 0 0 0.75rem 0;
+        }
+        .profile {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            padding: 1.25rem;
+            box-sizing: border-box;
+            background: #fafafa;
+            border-right: 1px solid #e6e6e6;
+            overflow: auto;
+        }
+        .profile h1 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.25rem;
+        }
+        .profile .subtitle {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 1rem;
+        }
+        .profile .contact-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            font-size: 0.95rem;
+        }
+        .profile .contact-list li { margin: 0.5rem 0; }
+        .main {
+            margin-left: 300px; /* leave space for profile + gap */
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Top menu bar */
+        nav.menu {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: #f4f4f4;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+        nav.menu button {
+            background: transparent;
+            border: 1px solid #ccc;
+            padding: 0.35rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        nav.menu button:hover,
+        nav.menu button:focus {
+            background: #e9e9e9;
+            outline: none;
+        }
+
+        /* Collapsible summary styling (bold headers) */
+        details.collapsible summary {
+            cursor: pointer;
+            font-weight: 700; /* bold */
+            padding: 0.25rem 0;
+            list-style: none;
+            outline: none;
+        }
+        details.collapsible summary::after {
+            content: "▾";
+            float: right;
+            transition: transform .18s ease;
+        }
+        details.collapsible[open] summary::after {
+            transform: rotate(180deg);
+        }
+        details.collapsible .content {
+            padding: 0.5rem 0 0.5rem 0;
+        }
+
+        /* Responsive: move profile above content on narrow screens */
+        @media (max-width: 700px) {
+            .profile {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e6e6e6;
+            }
+            .main {
+                margin-left: 0;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('nav.menu button[data-target]').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    const targetId = btn.getAttribute('data-target');
+                    const el = document.getElementById(targetId);
+                    if (!el) return;
+                    // If it's a details element, open it
+                    if (el.tagName.toLowerCase() === 'details') {
+                        el.open = true;
+                        // focus the summary for accessibility
+                        const summary = el.querySelector('summary');
+                        if (summary) summary.focus();
+                    }
+                    // Smooth scroll to the element
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+        });
+    </script>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <h1>Logan Lee</h1>
-        <!-- <p>Titles go here</p> -->
-    </header>
+    <div class="layout">
+        <!-- Profile column (fixed) -->
+        <!-- Profile column (fixed) -->
+        <aside class="profile" id="profile" aria-label="Profile">
++           <img src="Headshot.png" alt="Logan Lee headshot" class="headshot" />
+            <h1>Logan Lee</h1>
+            <div class="subtitle">B.S. Computer Science, B.A. Mathematics at Georgetown University (Class of 2026)</div>
 
-    <hr>
-
-    <!-- Contact Information -->
-    <details class="collapsible" id="contact-info" aria-labelledby="contact-summary">
-        <summary id="contact-summary">Contact Info and Social Media</summary>
-        <div class="content">
-            <ul>
-                <li>Email: <a href="mailto:leelogan794@gmail.com">leelogan794@gmail.com</a></li>
-                <!-- <li>Location: NYC, NY</li> -->
-                <li>GitHub: <a href="https://github.com/moltenlava16" target="_blank" rel="noopener">github.com/moltenlava16</a></li>
-                <li>LinkedIn: <a href="https://linkedin.com/in/leelogan794" target="_blank" rel="noopener">linkedin.com/in/leelogan794</a></li>
+            <ul class="contact-list">
+                <li><strong>Email:</strong> <a href="mailto:leelogan794@gmail.com">leelogan794@gmail.com</a></li>
+                <li><strong>GitHub:</strong> <a href="https://github.com/moltenlava16" target="_blank" rel="noopener">github.com/moltenlava16</a></li>
+                <li><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/leelogan794" target="_blank" rel="noopener">linkedin.com/in/leelogan794</a></li>
             </ul>
-        </div>
-    </details>
+        </aside>
 
-    <hr>
+        <!-- Main content (scrollable) -->
+        <main class="main">
+            <!-- Top menu bar -->
+            <nav class="menu" aria-label="Site menu">
+                <button type="button" data-target="profile">Contact Information</button>
+                <button type="button" data-target="resume">Resume</button>
+                <button type="button" data-target="projects">Projects</button>
+            </nav>
 
-    <!-- Resume Section -->
-    <details class="collapsible" id="resume" aria-labelledby="resume-summary">
-        <summary id="resume-summary">Resume</summary>
-        <div class="content">
-            <p>Download my resume: <a href="Logan Lee Resume Nov 2025.pdf" download>Resume (PDF)</a></p>
-            <!-- 
-            <h3>Skills</h3>
-            <ul>
-                <li>Programming Languages: JavaScript, Python, Java</li>
-                <li>Web Technologies: HTML, CSS, React, Node.js</li>
-                <li>Tools: Git, Docker, VS Code</li>
-            </ul>
-            -->
-        </div>
-    </details>
+            <hr>
 
-    <hr>
+            <!-- Resume Section -->
+            <details class="collapsible" id="resume" aria-labelledby="resume-summary">
+                <summary id="resume-summary">Resume</summary>
+                <div class="content">
+                    <p>Download my resume: <a href="Logan Lee Resume Nov 2025.pdf" download>Resume (PDF)</a></p>
+                    <!-- 
+                    <h3>Skills</h3>
+                    <ul>
+                        <li>Programming Languages: JavaScript, Python, Java</li>
+                        <li>Web Technologies: HTML, CSS, React, Node.js</li>
+                        <li>Tools: Git, Docker, VS Code</li>
+                    </ul>
+                    -->
+                </div>
+            </details>
 
-    <!-- Projects Section -->
-    <details class="collapsible" id="projects" aria-labelledby="projects-summary">
-        <summary id="projects-summary">Projects</summary>
-        <div class="content">
-            <h3>Nothing here yet!</h3>
-            <p>:(</p>
-            <!-- <p><a href="https://github.com/yourusername/project1" target="_blank">View on GitHub</a> | <a href="#" target="_blank">Live Demo</a></p> -->
-        </div>
-    </details>
+            <hr>
 
-    <hr>
+            <!-- Projects Section -->
+            <details class="collapsible" id="projects" aria-labelledby="projects-summary">
+                <summary id="projects-summary">Projects</summary>
+                <div class="content">
+                    <h3>Nothing here yet!</h3>
+                    <p>:(</p>
+                    <!-- <p><a href="https://github.com/yourusername/project1" target="_blank">View on GitHub</a> | <a href="#" target="_blank">Live Demo</a></p> -->
+                </div>
+            </details>
 
-    <!-- Footer -->
-    <footer>
-        <!-- <p>&copy; 2025 Logan Lee. All rights reserved.</p> -->
-        <p>Last updated: Oct 2025</p>
-    </footer>
+            <hr>
+
+            <!-- Footer -->
+            <footer>
+                <!-- <p>&copy; 2025 Logan Lee. All rights reserved.</p> -->
+                <p>Last updated: Oct 2025</p>
+            </footer>
+        </main>
+    </div>
 </body>
 </html>
