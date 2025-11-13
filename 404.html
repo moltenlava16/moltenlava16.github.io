@@ -70,11 +70,12 @@ p {
     cursor: grab;
     z-index: 100;
     transition: none;
+    position: relative;
 }
 
 #knife.dragging {
     cursor: grabbing;
-    position: fixed;
+    position: fixed !important;
     transition: none;
 }
 
@@ -139,6 +140,13 @@ p {
     font-size: 16px;
 }
 
+#cake-slice { 
+    cursor: pointer;
+}
+
+#cake-slice:hover {
+    transform: scale(1.05);
+}
 </style>
 </head>
 
@@ -148,19 +156,17 @@ p {
     <div class="instructions" id="instructions">(drag the knife to the cake to cut yourself a slice)</div>
     
     <div class="images-container">
-        <div id="knife" class="game-image Knife.png draggable">Knife</div>
-        <div id="cake" class="game-image Uneaten-Cake.png" data-state="0">Uneaten Cake</div>
+        <img id="knife" class="game-image draggable" src="Knife.png" alt="Knife">
+        <img id="cake" class="game-image" src="Uneaten-Cake.png" alt="Cake" data-state="0">
         <div id="plate-container">
-            <div id="plate" class="game-image Plate.png">Plate</div>
-            <div id="cake-slice" class="game-image Cake-slice.png" style="display: none;">
-                Cake Slice
-                <div class="click-to-eat" style="display: none;">Click to eat!</div>
-            </div>
+            <img id="plate" class="game-image" src="Plate.png" alt="Plate">
+            <img id="cake-slice" class="game-image" src="Cake-slice.png" alt="Cake Slice" style="display: none;">
+            <div class="click-to-eat" style="display: none;">Click to eat!</div>
         </div>
     </div>
     
     <div class="speech-bubble" id="speech-bubble">
-        <p style="margin: 0;">Sorry for the inconvenience... have a cake!</p>
+        <p style="margin: 0;">This page doesn't exist. Sorry for the inconvenience... have some cake!</p>
     </div>
     
     <div class="youtube-link" id="youtube-link">
@@ -176,7 +182,6 @@ let isDragging = false;
 let canDrag = true;
 let knifeOriginalPosition = null;
 let currentFontSize = 16;
-let initialMouseOffset = null;
 
 // Elements
 const knife = document.getElementById('knife');
@@ -188,29 +193,15 @@ const speechBubble = document.querySelector('.speech-bubble p');
 const instructions = document.getElementById('instructions');
 const youtubeLink = document.getElementById('youtube-link');
 
-// Cake states text
-const cakeStates = [
-    'Uneaten Cake',
-    'Cake with 1 slice',
-    'Cake with 2 slices',
-    'Cake with 3 slices',
-    'Cake with 4 slices',
-    'Crumbs'
+// Cake image sources
+const cakeImages = [
+    'Uneaten-Cake.png',
+    'Cake-with-1-slice.png',
+    'Cake-with-2-slices.png',
+    'Cake-with-3-slices.png',
+    'Cake-with-4-slices.png',
+    'Crumbs.png'
 ];
-
-// Store original knife position
-function storeKnifePosition() {
-    const rect = knife.getBoundingClientRect();
-    knifeOriginalPosition = {
-        left: rect.left,
-        top: rect.top
-    };
-}
-
-// Initialize knife position
-window.addEventListener('load', () => {
-    setTimeout(storeKnifePosition, 100);
-});
 
 // Drag functionality
 knife.addEventListener('mousedown', (e) => {
@@ -218,30 +209,28 @@ knife.addEventListener('mousedown', (e) => {
     e.preventDefault();
     
     isDragging = true;
-    knife.classList.add('dragging');
-    knife.classList.remove('returning');
     
-    // Store the initial offset between mouse and element center
+    // Get the current position of the knife
     const rect = knife.getBoundingClientRect();
-    initialMouseOffset = {
-        x: e.clientX - (rect.left + rect.width / 2),
-        y: e.clientY - (rect.top + rect.height / 2)
-    };
     
-    // Set initial position to fixed positioning
+    // Calculate offset from mouse position to element position
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    
+    // Set to fixed positioning and maintain current visual position
     knife.style.position = 'fixed';
     knife.style.left = rect.left + 'px';
     knife.style.top = rect.top + 'px';
     knife.style.zIndex = '1000';
+    knife.classList.add('dragging');
+    knife.classList.remove('returning');
     
     function moveKnife(e) {
         if (!isDragging) return;
-        // Position the element so its center follows the mouse with the initial offset
-        const newLeft = e.clientX - initialMouseOffset.x - knife.offsetWidth / 2;
-        const newTop = e.clientY - initialMouseOffset.y - knife.offsetHeight / 2;
         
-        knife.style.left = newLeft + 'px';
-        knife.style.top = newTop + 'px';
+        // Move knife based on mouse position minus the initial offset
+        knife.style.left = (e.clientX - offsetX) + 'px';
+        knife.style.top = (e.clientY - offsetY) + 'px';
     }
     
     function stopDragging(e) {
@@ -277,15 +266,13 @@ function isColliding(rect1, rect2) {
 
 // Return knife to original position
 function returnKnifeToOriginal() {
-    if (knifeOriginalPosition) {
-        setTimeout(() => {
-            knife.style.position = 'relative';
-            knife.style.left = '0px';
-            knife.style.top = '0px';
-            knife.style.zIndex = '100';
-            knife.classList.remove('returning');
-        }, 300);
-    }
+    setTimeout(() => {
+        knife.style.position = 'relative';
+        knife.style.left = '0px';
+        knife.style.top = '0px';
+        knife.style.zIndex = '100';
+        knife.classList.remove('returning');
+    }, 300);
 }
 
 // Handle knife-cake collision
@@ -293,7 +280,7 @@ function handleKnifeCakeCollision() {
     if (cakeState >= 5) return;
     
     cakeState++;
-    cake.textContent = cakeStates[cakeState];
+    cake.src = cakeImages[cakeState];
     cake.setAttribute('data-state', cakeState);
     
     // Update speech bubble based on state
@@ -323,7 +310,7 @@ function handleKnifeCakeCollision() {
 function showCakeSlice() {
     canDrag = false;
     plate.style.display = 'none';
-    cakeSlice.style.display = 'flex';
+    cakeSlice.style.display = 'block';
     clickToEat.style.display = 'block';
 }
 
@@ -340,7 +327,7 @@ function eatCakeSlice() {
     // Hide cake slice and show plate
     cakeSlice.style.display = 'none';
     clickToEat.style.display = 'none';
-    plate.style.display = 'flex';
+    plate.style.display = 'block';
     
     // Update instructions font size
     currentFontSize += 6;
